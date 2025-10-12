@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from supabase import create_client, Client
@@ -10,8 +11,12 @@ from statsforecast.models import CrostonOptimized
 @st.cache_resource
 def init_connection():
       
-    url: str = st.secrets['supabase_url']
-    key: str = st.secrets['supabase_key']
+    #url: str = st.secrets['supabase_url']
+    #key: str = st.secrets['supabase_key']
+
+    url = os.environ.get('supabase_url')
+    key = os.environ.get('supabase_key')
+
 
     client: Client = create_client(url, key)
 
