@@ -3,35 +3,60 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from supabase import create_client, Client
+import pymysql
 from statsforecast import StatsForecast
 from statsforecast.models import CrostonOptimized
+#from dotenv import load_dotenv
+
+#load_dotenv()
 
 # Initialize connection to db
 
-@st.cache_resource
-def init_connection():
+#@st.cache_resource
+#def init_connection():
       
     #url: str = st.secrets['supabase_url']
     #key: str = st.secrets['supabase_key']
 
-    url = os.environ.get('supabase_url')
-    key = os.environ.get('supabase_key')
+    #url = os.environ.get('supabase_url')
+    #key = os.environ.get('supabase_key')
 
 
-    client: Client = create_client(url, key)
+    #client: Client = create_client(url, key)
 
-    return client
+    #return client
 
 # Run the function to make the connection
 
-supabase = init_connection()
+# supabase = init_connection()
+@st.cache_resource
+def init_connection():
+    return pymysql.connect(
+        host=os.environ.get("MYSQL_HOST"),
+        user=os.environ.get("MYSQL_USER"),
+        password=os.environ.get("MYSQL_PASS"),
+        database=os.environ.get("MYSQL_DB"),
+        port=3306,
+        cursorclass=pymysql.cursors.DictCursor  # returns rows as dicts
+    )
+
+
+conn = init_connection()
 
 # Function to query the db
 
-@st.cache_data(ttl=600)  # cache clears after 10 minutes
+#@st.cache_data(ttl=600)  # cache clears after 10 minutes
+#def run_query():
+#    # Return all data
+#    return supabase.table('car_parts_monthly_sales').select("*").execute()
+# Query MySQL database
+@st.cache_data(ttl=600)
 def run_query():
-    # Return all data
-    return supabase.table('car_parts_monthly_sales').select("*").execute()
+    query = "SELECT * FROM car_parts_monthly_sales"
+    with conn.cursor() as cursor:
+        cursor.execute(query)
+        result = cursor.fetchall()
+    return pd.DataFrame(result)
 
 # Return all data
 
@@ -41,8 +66,9 @@ def run_query():
 
 @st.cache_data(ttl=600)
 def create_dataframe():
-    rows = run_query()
-    df = pd.json_normalize(rows.data)
+    #rows = run_query()
+    df = run_query()
+    #df = pd.json_normalize(rows.data)
     df['volume'] = df['volume'].astype(int)
 
     return df
